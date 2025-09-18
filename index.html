@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>McDonald's Bestellterminal</title>
+<style>
+body { font-family: Arial,sans-serif; margin:0; padding:0; background:#f8f8f8; overflow-x:hidden; }
+header { display:flex; align-items:center; background:#FFC72C; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+header img { height:50px; margin-right:10px; }
+h1 { font-size:1.5em; margin:0; }
+#loyaltyBtn { margin-left:auto; background:#FFC72C; border:none; padding:8px 15px; border-radius:8px; font-weight:bold; cursor:pointer; transition:all 0.2s; }
+#loyaltyBtn:hover { transform:scale(1.1) rotate(-2deg); }
+
+.tabs { display:flex; background:#333; overflow:hidden; }
+.tab { flex:1; padding:12px; text-align:center; color:white; cursor:pointer; transition: all 0.3s ease; }
+.tab:hover { transform: scale(1.05); }
+.tab.active { background:#555; animation:tabPulse 0.5s; }
+@keyframes tabPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+.tab-content { display:none; padding:15px; opacity:0; transform:translateY(20px); transition: all 0.5s ease; }
+.tab-content.active { display:block; opacity:1; transform:translateY(0); }
+
+.menu-item, .cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px; background:white; margin-bottom:5px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); transform:translateX(-20px); opacity:0; animation:fadeIn 0.5s forwards; }
+
+button { background: #FFC72C; border: none; padding: 8px 15px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: all 0.2s; }
+button:hover { transform: scale(1.1) rotate(-2deg); }
+
+#cart { position: fixed; left:20px; bottom:20px; width:300px; max-height:500px; background:white; box-shadow:0 5px 15px rgba(0,0,0,0.2); padding:15px; overflow-y:auto; border-radius:12px; transform:translateY(100px); opacity:0; transition: all 0.5s ease; z-index:1000; }
+#cart.show { transform:translateY(0); opacity:1; animation:cartBounce 0.4s; }
+@keyframes cartBounce { 0% { transform:translateY(20px); } 50% { transform:translateY(-5px); } 100% { transform:translateY(0); } }
+
+.cart-item span.remove { cursor:pointer; color:red; margin-left:10px; transition: transform 0.2s; }
+.cart-item span.remove:hover { transform: scale(1.3) rotate(15deg); }
+
+@keyframes fadeIn { to { opacity:1; transform:translateX(0); } }
+
+.popup { display:flex; justify-content:center; align-items:center; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); opacity:0; pointer-events:none; transition: all 0.4s ease; z-index:2000; }
+.popup.show { opacity:1; pointer-events:auto; }
+.popup-content { background:white; padding:25px; border-radius:15px; text-align:center; max-width:90%; transform:translateY(-50px); transition: all 0.4s ease; }
+.popup.show .popup-content { transform:translateY(0); animation:popupPop 0.3s; }
+@keyframes popupPop { 0% { transform:translateY(-50px) scale(0.8); opacity:0; } 60% { transform:translateY(10px) scale(1.05); opacity:1; } 100% { transform:translateY(0) scale(1); } }
+
+.popup-content .close { position:absolute; top:10px; right:10px; cursor:pointer; font-weight:bold; }
+.loading { font-size:1.3em; }
+
+.success-checkmark { display:flex; position:absolute; top:50%; left:50%; width:120px; height:120px; border-radius:50%; background:#4CAF50; align-items:center; justify-content:center; transform:translate(-50%,-50%) scale(0.5); opacity:0; z-index:5000; }
+.success-checkmark.show { animation:successPop 1.5s forwards; }
+.success-checkmark::after { content:""; width:35px; height:70px; border-right:6px solid white; border-bottom:6px solid white; transform:rotate(45deg) scale(0); animation:drawCheck 1.5s forwards 0.3s; }
+
+@keyframes successPop { 0% { transform:translate(-50%,-50%) scale(0.5); opacity:0; } 60% { transform:translate(-50%,-50%) scale(1.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1); } }
+@keyframes drawCheck { 0%{transform:rotate(45deg) scale(0);} 100%{transform:rotate(45deg) scale(1);} }
+
+.notification { position: fixed; bottom: 20px; right: 20px; left: auto; background:#333; color:white; padding:12px 20px; border-radius:8px; font-weight:bold; opacity:0; transition: all 0.5s ease; z-index:3000; }
+.notification.show { opacity:1; }
+
+.confetti { position:fixed; width:10px; height:10px; background: #FFC72C; z-index:4000; pointer-events:none; opacity:0; border-radius:50%; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://i.imgur.com/X5tVuzv.png" alt="McDonald's Logo">
+  <h1>McDonald's Bestellterminal</h1>
+  <button id="loyaltyBtn">Treuekarte</button>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="openTab('meals')">Menüs</div>
+  <div class="tab" onclick="openTab('drinks')">Getränke</div>
+  <div class="tab" onclick="openTab('desserts')">Desserts</div>
+</div>
+
+<div id="meals" class="tab-content active">
+  <div class="menu-item"><span>Big Mac - €5,99</span><button onclick="addToCart('Big Mac',5.99)">Hinzufügen</button></div>
+  <div class="menu-item"><span>McChicken - €4,99</span><button onclick="addToCart('McChicken',4.99)">Hinzufügen</button></div>
+  <div class="menu-item"><span>Cheeseburger - €2,99</span><button onclick="addToCart('Cheeseburger',2.99)">Hinzufügen</button></div>
+</div>
+
+<div id="drinks" class="tab-content">
+  <div class="menu-item"><span>Coca Cola - €1,99</span><button onclick="addToCart('Coca Cola',1.99)">Hinzufügen</button></div>
+  <div class="menu-item"><span>Fanta - €1,99</span><button onclick="addToCart('Fanta',1.99)">Hinzufügen</button></div>
+  <div class="menu-item"><span>Wasser - €1,49</span><button onclick="addToCart('Wasser',1.49)">Hinzufügen</button></div>
+</div>
+
+<div id="desserts" class="tab-content">
+  <div class="menu-item"><span>McFlurry - €2,99</span><button onclick="addToCart('McFlurry',2.99)">Hinzufügen</button></div>
+  <div class="menu-item"><span>Apfeltasche - €1,99</span><button onclick="addToCart('Apfeltasche',1.99)">Hinzufügen</button></div>
+</div>
+
+<div id="cart">
+  <h2>Ihre Bestellung</h2>
+  <div id="cartItems"></div>
+  <p>Gesamt: €<span id="total">0,00</span></p>
+  <button onclick="showPayment()">Bezahlen</button>
+</div>
+
+<!-- Payment popup -->
+<div id="paymentPopup" class="popup">
+  <div class="popup-content">
+    <span class="close" onclick="closePopup('paymentPopup')">X</span>
+    <h2>Zahlungsmethode wählen</h2>
+    <button onclick="pay('cash')">Bar</button>
+    <button onclick="pay('card')">Karte</button>
+    <button id="useBalanceBtn" style="display:none;" onclick="pay('balance')">Punkte verwenden (€<span id="cardBalance">0,00</span>)</button>
+  </div>
+</div>
+
+<!-- Loyalty card popup -->
+<div id="loyaltyPopup" class="popup">
+  <div class="popup-content">
+    <span class="close" onclick="closePopup('loyaltyPopup')">X</span>
+    <h2>Kartennummer eingeben</h2>
+    <input type="text" id="cardInput" placeholder="Kartennummer" style="padding:8px; font-size:1em; border-radius:5px; border:1px solid #ccc; width:80%;"><br><br>
+    <button onclick="loginCard()">Bestätigen</button>
+  </div>
+</div>
+
+<!-- Card insert -->
+<div id="insertStep" class="popup">
+  <div class="popup-content">
+    <h2>Bitte Karte ins Terminal einstecken</h2>
+    <button onclick="insertCard()">Eingesteckt</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading" class="popup">
+  <div class="popup-content">
+    <div class="loading">Verarbeite...</div>
+  </div>
+</div>
+
+<!-- Success -->
+<div id="successCheck" class="popup">
+  <div class="success-checkmark"></div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<audio id="applePaySound" src="your_sound_file_here.mp3"></audio>
+
+<script>
+let cart=[]; 
+let loyaltyCard={number:"676942041",balance:0.00,loggedIn:false};
+
+function openTab(tabId){ document.querySelectorAll('.tab,.tab-content').forEach(el=>el.classList.remove('active')); document.getElementById(tabId).classList.add('active'); document.querySelector(`.tab[onclick="openTab('${tabId}')"]`).classList.add('active'); }
+function addToCart(item,price){ cart.push({item,price}); renderCart(); }
+function removeFromCart(i){ cart.splice(i,1); renderCart(); }
+function renderCart(){ let html=''; let total=0; cart.forEach((c,i)=>{ html+=`<div class="cart-item">${c.item} - €${c.price.toFixed(2)} <span class="remove" onclick="removeFromCart(${i})">X</span></div>`; total+=c.price; }); document.getElementById('cartItems').innerHTML=html; document.getElementById('total').innerText=total.toFixed(2).replace('.',','); document.getElementById('cart').classList.add('show'); }
+
+function showNotification(text){ const notif=document.getElementById("notification"); notif.innerText=text; notif.classList.add("show"); setTimeout(()=>{ notif.classList.remove("show"); },6000); }
+
+document.getElementById('loyaltyBtn').addEventListener('click',()=>{ document.getElementById('loyaltyPopup').classList.add('show'); });
+function loginCard(){ const input=document.getElementById('cardInput').value.trim(); if(input===loyaltyCard.number){ loyaltyCard.loggedIn=true; showNotification("Karte eingeloggt! Balance: €"+loyaltyCard.balance.toFixed(2).replace('.',',')); closePopup('loyaltyPopup'); } else { showNotification("Ungültige Kartennummer!"); } }
+
+function showPayment(){
+  if(cart.length===0) return showNotification("Ihr Warenkorb ist leer!");
+  const cardBtn=document.querySelector('#paymentPopup button[onclick="pay(\'card\')"]');
+  const useBtn=document.getElementById('useBalanceBtn');
+  const totalPrice=cart.reduce((sum,c)=>sum+c.price,0);
+
+  cardBtn.style.display='inline-block';
+  if(loyaltyCard.loggedIn){ useBtn.style.display='inline-block'; document.getElementById('cardBalance').innerText=loyaltyCard.balance.toFixed(2).replace('.',','); useBtn.disabled=loyaltyCard.balance<totalPrice; } else useBtn.style.display='none';
+  document.getElementById("paymentPopup").classList.add("show");
+}
+
+function closePopup(id){ document.getElementById(id).classList.remove("show"); }
+
+function pay(method){
+  closePopup('paymentPopup');
+  if(method==='cash') startOrder('Bar');
+  else if(method==='card') document.getElementById("insertStep").classList.add("show");
+  else if(method==='balance') startOrder('Balance');
+}
+
+function insertCard(){
+  document.getElementById("insertStep").classList.remove("show");
+  document.getElementById("loading").classList.add("show");
+  setTimeout(()=>{
+    document.getElementById("loading").classList.remove("show");
+    let check=document.getElementById("successCheck");
+    check.classList.add("show");
+    check.querySelector(".success-checkmark").classList.add("show");
+    document.getElementById("applePaySound").play();
+    launchConfetti();
+    setTimeout(()=>{
+      check.querySelector(".success-checkmark").classList.remove("show");
+      check.classList.remove("show");
+      startOrder("Karte");
+    },2000);
+  },2500);
+}
+
+function generateOrderNumber(){ let number; do{ number=Math.floor(1000+Math.random()*9000); } while(Math.random()<0.6 && !String(number).includes("67")); return number; }
+
+function startOrder(method){
+  const orderNumber=generateOrderNumber();
+  let totalPrice = cart.reduce((sum,c)=>sum+c.price,0);
+
+  if(method==='Balance' && loyaltyCard.loggedIn && loyaltyCard.balance>0){
+    const deduction=Math.min(loyaltyCard.balance,totalPrice);
+    totalPrice-=deduction;
+    loyaltyCard.balance-=deduction;
+    loyaltyCard.balance=parseFloat(loyaltyCard.balance.toFixed(2));
+  }
+
+  cart.forEach(c=>{
+    if(c.item.toLowerCase().includes("mac")||c.item.toLowerCase().includes("chicken")||c.item.toLowerCase().includes("burger")) loyaltyCard.balance+=0.15;
+    else loyaltyCard.balance+=0.05;
+  });
+  loyaltyCard.balance=parseFloat(loyaltyCard.balance.toFixed(2));
+  document.getElementById('cardBalance').innerText=loyaltyCard.balance.toFixed(2).replace('.',',');
+
+  showNotification("Bestellung aufgegeben! Nr: "+orderNumber+" ("+method+")\nEndpreis: €"+totalPrice.toFixed(2).replace('.',','));
+  cart=[]; renderCart();
+
+  const readyTime=(60+Math.random()*30)*1000;
+  setTimeout(()=>{ showNotification("Bestellung "+orderNumber+" ist abholbereit!"); },readyTime);
+}
+
+function launchConfetti(){
+  for(let i=0;i<50;i++){
+    const c=document.createElement("div");
+    c.className="confetti";
+    c.style.left=Math.random()*window.innerWidth+"px";
+    c.style.background=["#FFC72C","#FF3C00","#00BFFF","#32CD32"][Math.floor(Math.random()*4)];
+    document.body.appendChild(c);
+    let fall=0;
+    c.style.opacity=1;
+    const interval=setInterval(()=>{
+      fall+=Math.random()*8+2;
+      c.style.top=fall+"px";
+      c.style.transform=`rotate(${fall*10}deg)`;
+      if(fall>window.innerHeight){ clearInterval(interval); c.remove(); }
+    },16);
+  }
+}
+</script>
+</body>
+</html>
