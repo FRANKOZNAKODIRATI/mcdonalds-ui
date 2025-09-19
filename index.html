@@ -114,6 +114,30 @@
             position: relative;
         }
 
+        .size-selector {
+            margin: 10px 0;
+            display: none;
+        }
+
+        .size-selector.show {
+            display: block;
+        }
+
+        .size-selector select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .size-selector select:focus {
+            border-color: #d32f2f;
+            outline: none;
+        }
+
         .menu-item:hover {
             border-color: #d32f2f;
             transform: translateY(-2px);
@@ -606,14 +630,55 @@
                 { id: 18, name: "Apfelscheiben", description: "Frische Apfelscheiben", price: 1.49 }
             ],
             drinks: [
-                { id: 19, name: "Coca-Cola klein", description: "Erfrischende Cola 0,25l", price: 1.99 },
-                { id: 20, name: "Coca-Cola mittel", description: "Erfrischende Cola 0,4l", price: 2.49 },
-                { id: 21, name: "Coca-Cola groß", description: "Erfrischende Cola 0,5l", price: 2.99 },
-                { id: 22, name: "Fanta Orange", description: "Fruchtige Orange 0,4l", price: 2.49 },
-                { id: 23, name: "Sprite", description: "Zitronig-frisch 0,4l", price: 2.49 },
+                { 
+                    id: 19, 
+                    name: "Coca-Cola", 
+                    description: "Erfrischende Cola", 
+                    price: 1.99,
+                    hasSizes: true,
+                    sizes: [
+                        { name: "Klein (0,25l)", price: 1.99 },
+                        { name: "Mittel (0,4l)", price: 2.49 },
+                        { name: "Groß (0,5l)", price: 2.99 }
+                    ]
+                },
+                { 
+                    id: 22, 
+                    name: "Fanta Orange", 
+                    description: "Fruchtige Orange", 
+                    price: 2.49,
+                    hasSizes: true,
+                    sizes: [
+                        { name: "Klein (0,25l)", price: 1.99 },
+                        { name: "Mittel (0,4l)", price: 2.49 },
+                        { name: "Groß (0,5l)", price: 2.99 }
+                    ]
+                },
+                { 
+                    id: 23, 
+                    name: "Sprite", 
+                    description: "Zitronig-frisch", 
+                    price: 2.49,
+                    hasSizes: true,
+                    sizes: [
+                        { name: "Klein (0,25l)", price: 1.99 },
+                        { name: "Mittel (0,4l)", price: 2.49 },
+                        { name: "Groß (0,5l)", price: 2.99 }
+                    ]
+                },
                 { id: 24, name: "Kaffee", description: "Frisch gebrühter Kaffee", price: 1.99 },
                 { id: 25, name: "Cappuccino", description: "Cremiger Cappuccino", price: 2.79 },
-                { id: 26, name: "Orangensaft", description: "100% Orangensaft 0,25l", price: 2.99 }
+                { 
+                    id: 26, 
+                    name: "Orangensaft", 
+                    description: "100% Orangensaft", 
+                    price: 2.99,
+                    hasSizes: true,
+                    sizes: [
+                        { name: "Klein (0,25l)", price: 2.99 },
+                        { name: "Groß (0,5l)", price: 3.99 }
+                    ]
+                }
             ],
             desserts: [
                 { id: 27, name: "McFlurry Oreo", description: "Vanilleeis mit Oreo-Keksstücken", price: 3.49 },
@@ -703,12 +768,21 @@
             const items = menuData[currentCategory];
             
             container.innerHTML = items.map(item => `
-                <div class="menu-item" onclick="addToCart(${item.id})">
+                <div class="menu-item" onclick="${item.hasSizes ? `toggleSizeSelector(${item.id})` : `addToCart(${item.id})`}">
                     <h3>${item.name}</h3>
                     <p>${item.description}</p>
+                    ${item.hasSizes ? `
+                        <div class="size-selector" id="size-${item.id}">
+                            <select onchange="updatePrice(${item.id}, this.value)" onclick="event.stopPropagation()">
+                                ${item.sizes.map((size, index) => `
+                                    <option value="${index}">${size.name} - ${size.price.toFixed(2)} €</option>
+                                `).join('')}
+                            </select>
+                        </div>
+                    ` : ''}
                     <div class="item-footer">
-                        <span class="price">${item.price.toFixed(2)} €</span>
-                        <button class="add-btn" onclick="event.stopPropagation(); addToCart(${item.id})">Hinzufügen</button>
+                        <span class="price" id="price-${item.id}">${item.price.toFixed(2)} €</span>
+                        <button class="add-btn" onclick="event.stopPropagation(); ${item.hasSizes ? `addSizedItemToCart(${item.id})` : `addToCart(${item.id})`}">Hinzufügen</button>
                     </div>
                 </div>
             `).join('');
@@ -726,8 +800,57 @@
             }
         }
 
+        function toggleSizeSelector(itemId) {
+            const selector = document.getElementById(`size-${itemId}`);
+            const isVisible = selector.classList.contains('show');
+            
+            // Hide all other selectors
+            document.querySelectorAll('.size-selector').forEach(s => s.classList.remove('show'));
+            
+            // Toggle current selector
+            if (!isVisible) {
+                selector.classList.add('show');
+            }
+        }
+
+        function updatePrice(itemId, sizeIndex) {
+            const allItems = Object.values(menuData).flat();
+            const item = allItems.find(i => i.id === itemId);
+            
+            if (item && item.hasSizes) {
+                const selectedSize = item.sizes[sizeIndex];
+                const priceElement = document.getElementById(`price-${itemId}`);
+                priceElement.textContent = selectedSize.price.toFixed(2) + ' €';
+            }
+        }
+
+        function addSizedItemToCart(itemId) {
+            const allItems = Object.values(menuData).flat();
+            const item = allItems.find(i => i.id === itemId);
+            const selector = document.getElementById(`size-${itemId}`).querySelector('select');
+            const selectedSizeIndex = selector.value;
+            
+            if (item && item.hasSizes) {
+                const selectedSize = item.sizes[selectedSizeIndex];
+                const cartItem = {
+                    ...item,
+                    name: `${item.name} ${selectedSize.name}`,
+                    price: selectedSize.price,
+                    cartId: Date.now() + Math.random()
+                };
+                
+                cart.push(cartItem);
+                renderCart();
+                showNotification('Artikel hinzugefügt', 'success');
+                playSound('add');
+                
+                // Hide the size selector after adding
+                document.getElementById(`size-${itemId}`).classList.remove('show');
+            }
+        }
+
         function removeFromCart(cartId) {
-            cart = cart.filter(item => item.cartId !== cartId);
+            cart = cart.filter(item => item.cartId != cartId);
             renderCart();
             showNotification('Artikel entfernt', 'info');
         }
@@ -756,7 +879,7 @@
                             <h4>${item.name}</h4>
                             <div class="cart-item-price">${item.price.toFixed(2)} €</div>
                         </div>
-                        <button class="remove-btn" onclick="removeFromCart('${item.cartId}')">×</button>
+                        <button class="remove-btn" onclick="removeFromCart(${item.cartId})">×</button>
                     </div>
                 `).join('');
                 checkoutBtn.disabled = false;
@@ -884,25 +1007,24 @@
         function simulateCardPayment() {
             const statusDiv = document.getElementById('cardStatus');
             
-            setTimeout(() => {
-                statusDiv.innerHTML = '<p>Karte wird gelesen...</p><div class="loading-spinner"></div>';
-                playSound('card');
-            }, 1000);
+            // Start immediately
+            statusDiv.innerHTML = '<p>Karte wird gelesen...</p><div class="loading-spinner"></div>';
+            playSound('card');
             
             setTimeout(() => {
                 statusDiv.innerHTML = '<p>PIN-Eingabe durch Kunden...</p><div class="loading-spinner"></div>';
-            }, 2500);
+            }, 1500);
             
             setTimeout(() => {
                 statusDiv.innerHTML = '<p>Zahlung wird verarbeitet...</p><div class="loading-spinner"></div>';
-            }, 4000);
+            }, 3000);
             
             setTimeout(() => {
                 closeModal();
                 showSuccessAnimation();
                 showNotification('Kartenzahlung erfolgreich!', 'success');
                 completeOrder();
-            }, 5500);
+            }, 4500);
         }
 
         function processLoyaltyPayment() {
@@ -1056,5 +1178,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981c3568e18925c0',t:'MTc1ODMxNzY4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981c475f4387f406',t:'MTc1ODMxODQxOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
