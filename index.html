@@ -1,241 +1,1060 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>McDonald's Bestellterminal</title>
-<style>
-body { font-family: Arial,sans-serif; margin:0; padding:0; background:#f8f8f8; overflow-x:hidden; }
-header { display:flex; align-items:center; background:#FFC72C; padding:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
-header img { height:50px; margin-right:10px; }
-h1 { font-size:1.5em; margin:0; }
-#loyaltyBtn { margin-left:auto; background:#FFC72C; border:none; padding:8px 15px; border-radius:8px; font-weight:bold; cursor:pointer; transition:all 0.2s; }
-#loyaltyBtn:hover { transform:scale(1.1) rotate(-2deg); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McDonald's Kassensystem</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-.tabs { display:flex; background:#333; overflow:hidden; }
-.tab { flex:1; padding:12px; text-align:center; color:white; cursor:pointer; transition: all 0.3s ease; }
-.tab:hover { transform: scale(1.05); }
-.tab.active { background:#555; animation:tabPulse 0.5s; }
-@keyframes tabPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
-.tab-content { display:none; padding:15px; opacity:0; transform:translateY(20px); transition: all 0.5s ease; }
-.tab-content.active { display:block; opacity:1; transform:translateY(0); }
+        .terminal {
+            max-width: 1400px;
+            margin: 10px auto;
+            background: #2c2c2c;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            overflow: hidden;
+            border: 3px solid #d32f2f;
+        }
 
-.menu-item, .cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px; background:white; margin-bottom:5px; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.1); transform:translateX(-20px); opacity:0; animation:fadeIn 0.5s forwards; }
+        .header {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ffcc00;
+        }
 
-button { background: #FFC72C; border: none; padding: 8px 15px; cursor: pointer; border-radius: 8px; font-weight: bold; transition: all 0.2s; }
-button:hover { transform: scale(1.1) rotate(-2deg); }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: bold;
+        }
 
-#cart { position: fixed; left:20px; bottom:20px; width:300px; max-height:500px; background:white; box-shadow:0 5px 15px rgba(0,0,0,0.2); padding:15px; overflow-y:auto; border-radius:12px; transform:translateY(100px); opacity:0; transition: all 0.5s ease; z-index:1000; }
-#cart.show { transform:translateY(0); opacity:1; animation:cartBounce 0.4s; }
-@keyframes cartBounce { 0% { transform:translateY(20px); } 50% { transform:translateY(-5px); } 100% { transform:translateY(0); } }
+        .cashier-info {
+            text-align: right;
+            font-size: 0.9rem;
+        }
 
-.cart-item span.remove { cursor:pointer; color:red; margin-left:10px; transition: transform 0.2s; }
-.cart-item span.remove:hover { transform: scale(1.3) rotate(15deg); }
+        .cashier-info .cashier-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
 
-@keyframes fadeIn { to { opacity:1; transform:translateX(0); } }
+        .main-container {
+            display: flex;
+            min-height: 700px;
+            background: #f5f5f5;
+        }
 
-.popup { display:flex; justify-content:center; align-items:center; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); opacity:0; pointer-events:none; transition: all 0.4s ease; z-index:2000; }
-.popup.show { opacity:1; pointer-events:auto; }
-.popup-content { background:white; padding:25px; border-radius:15px; text-align:center; max-width:90%; transform:translateY(-50px); transition: all 0.4s ease; }
-.popup.show .popup-content { transform:translateY(0); animation:popupPop 0.3s; }
-@keyframes popupPop { 0% { transform:translateY(-50px) scale(0.8); opacity:0; } 60% { transform:translateY(10px) scale(1.05); opacity:1; } 100% { transform:translateY(0) scale(1); } }
+        .menu-section {
+            flex: 2.5;
+            background: white;
+            border-right: 3px solid #d32f2f;
+        }
 
-.popup-content .close { position:absolute; top:10px; right:10px; cursor:pointer; font-weight:bold; }
-.loading { font-size:1.3em; }
+        .menu-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
 
-.success-checkmark { display:flex; position:absolute; top:50%; left:50%; width:120px; height:120px; border-radius:50%; background:#4CAF50; align-items:center; justify-content:center; transform:translate(-50%,-50%) scale(0.5); opacity:0; z-index:5000; }
-.success-checkmark.show { animation:successPop 1.5s forwards; }
-.success-checkmark::after { content:""; width:35px; height:70px; border-right:6px solid white; border-bottom:6px solid white; transform:rotate(45deg) scale(0); animation:drawCheck 1.5s forwards 0.3s; }
+        .tab {
+            padding: 15px 25px;
+            background: #f8f9fa;
+            border: none;
+            border-right: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+            min-width: 120px;
+        }
 
-@keyframes successPop { 0% { transform:translate(-50%,-50%) scale(0.5); opacity:0; } 60% { transform:translate(-50%,-50%) scale(1.3); opacity:1; } 100% { transform:translate(-50%,-50%) scale(1); } }
-@keyframes drawCheck { 0%{transform:rotate(45deg) scale(0);} 100%{transform:rotate(45deg) scale(1);} }
+        .tab.active {
+            background: #d32f2f;
+            color: white;
+            border-bottom: 3px solid #ffcc00;
+        }
 
-.notification { position: fixed; bottom: 20px; right: 20px; left: auto; background:#333; color:white; padding:12px 20px; border-radius:8px; font-weight:bold; opacity:0; transition: all 0.5s ease; z-index:3000; }
-.notification.show { opacity:1; }
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+        }
 
-.confetti { position:fixed; width:10px; height:10px; background: #FFC72C; z-index:4000; pointer-events:none; opacity:0; border-radius:50%; }
-</style>
+        .menu-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .menu-item:hover {
+            border-color: #d32f2f;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2);
+        }
+
+        .menu-item h3 {
+            color: #d32f2f;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+
+        .menu-item p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+
+        .add-btn {
+            background: #ffcc00;
+            color: #d32f2f;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .add-btn:hover {
+            background: #ffc107;
+            transform: scale(1.05);
+        }
+
+        .cart-section {
+            flex: 1;
+            background: #2c2c2c;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-header {
+            background: #1a1a1a;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid #d32f2f;
+        }
+
+        .cart-header h2 {
+            color: #ffcc00;
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .order-number {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+
+        .cart-items {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #3c3c3c;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid #ffcc00;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .cart-item-info h4 {
+            color: white;
+            margin-bottom: 3px;
+            font-size: 0.95rem;
+        }
+
+        .cart-item-price {
+            font-weight: bold;
+            color: #ffcc00;
+            font-size: 1rem;
+        }
+
+        .remove-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+
+        .cart-total {
+            background: #1a1a1a;
+            padding: 20px;
+            text-align: center;
+            border-top: 2px solid #d32f2f;
+            border-bottom: 2px solid #d32f2f;
+        }
+
+        .total-amount {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        .cart-actions {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkout-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .checkout-btn:hover:not(:disabled) {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .checkout-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .clear-btn {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .clear-btn:hover {
+            background: #e55a2b;
+        }
+
+        .loyalty-section {
+            padding: 15px;
+            background: #1a1a1a;
+            border-top: 1px solid #444;
+        }
+
+        .loyalty-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            background: #3c3c3c;
+            color: white;
+        }
+
+        .loyalty-btn {
+            width: 100%;
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .loyalty-balance {
+            text-align: center;
+            margin-top: 8px;
+            padding: 8px;
+            background: #3c3c3c;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #4caf50;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .payment-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .payment-btn {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .payment-btn:hover {
+            border-color: #d32f2f;
+            background: #f5f5f5;
+            transform: translateY(-2px);
+        }
+
+        .cash-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 2000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .notification.success { background: #4caf50; }
+        .notification.error { background: #f44336; }
+        .notification.info { background: #2196f3; }
+
+        .success-animation {
+            font-size: 4rem;
+            color: #4caf50;
+            animation: bounce 0.6s ease;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-20px); }
+            60% { transform: translateY(-10px); }
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #d32f2f;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden { display: none; }
+
+        .empty-cart {
+            text-align: center;
+            color: #888;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .menu-items {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            
+            .menu-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="terminal">
+        <div class="header">
+            <h1>🍟 McDonald's Kassensystem</h1>
+            <div class="cashier-info">
+                <div class="cashier-name">Kassier: Franko Pačarić</div>
+                <div>Kasse #3 | Schicht: 14:00-22:00</div>
+                <div id="currentTime"></div>
+            </div>
+        </div>
 
-<header>
-  <img src="https://i.imgur.com/X5tVuzv.png" alt="McDonald's Logo">
-  <h1>McDonald's Bestellterminal</h1>
-  <button id="loyaltyBtn">Treuekarte</button>
-</header>
+        <div class="main-container">
+            <div class="menu-section">
+                <div class="menu-tabs">
+                    <div class="tab active" data-category="burgers">🍔 Burger</div>
+                    <div class="tab" data-category="chicken">🍗 Hähnchen</div>
+                    <div class="tab" data-category="sides">🍟 Beilagen</div>
+                    <div class="tab" data-category="drinks">🥤 Getränke</div>
+                    <div class="tab" data-category="desserts">🍦 Desserts</div>
+                    <div class="tab" data-category="menus">📦 Menüs</div>
+                </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="openTab('meals')">Menüs</div>
-  <div class="tab" onclick="openTab('drinks')">Getränke</div>
-  <div class="tab" onclick="openTab('desserts')">Desserts</div>
-</div>
+                <div class="menu-items" id="menuItems">
+                    <!-- Menu items will be populated by JavaScript -->
+                </div>
+            </div>
 
-<div id="meals" class="tab-content active">
-  <div class="menu-item"><span>Big Mac - €5,99</span><button onclick="addToCart('Big Mac',5.99)">Hinzufügen</button></div>
-  <div class="menu-item"><span>McChicken - €4,99</span><button onclick="addToCart('McChicken',4.99)">Hinzufügen</button></div>
-  <div class="menu-item"><span>Cheeseburger - €2,99</span><button onclick="addToCart('Cheeseburger',2.99)">Hinzufügen</button></div>
-</div>
+            <div class="cart-section">
+                <div class="cart-header">
+                    <h2>🧾 Aktuelle Bestellung</h2>
+                    <div class="order-number">Bestellung #<span id="orderNumber">1001</span></div>
+                </div>
 
-<div id="drinks" class="tab-content">
-  <div class="menu-item"><span>Coca Cola - €1,99</span><button onclick="addToCart('Coca Cola',1.99)">Hinzufügen</button></div>
-  <div class="menu-item"><span>Fanta - €1,99</span><button onclick="addToCart('Fanta',1.99)">Hinzufügen</button></div>
-  <div class="menu-item"><span>Wasser - €1,49</span><button onclick="addToCart('Wasser',1.49)">Hinzufügen</button></div>
-</div>
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">Keine Artikel ausgewählt</div>
+                </div>
 
-<div id="desserts" class="tab-content">
-  <div class="menu-item"><span>McFlurry - €2,99</span><button onclick="addToCart('McFlurry',2.99)">Hinzufügen</button></div>
-  <div class="menu-item"><span>Apfeltasche - €1,99</span><button onclick="addToCart('Apfeltasche',1.99)">Hinzufügen</button></div>
-</div>
+                <div class="cart-total">
+                    <div class="total-amount" id="totalAmount">0,00 €</div>
+                </div>
 
-<div id="cart">
-  <h2>Ihre Bestellung</h2>
-  <div id="cartItems"></div>
-  <p>Gesamt: €<span id="total">0,00</span></p>
-  <button onclick="showPayment()">Bezahlen</button>
-</div>
+                <div class="cart-actions">
+                    <button class="action-btn checkout-btn" id="checkoutBtn" disabled>💳 Zur Kasse (F1)</button>
+                    <button class="action-btn clear-btn" id="clearBtn">🗑️ Bestellung löschen</button>
+                </div>
 
-<!-- Payment popup -->
-<div id="paymentPopup" class="popup">
-  <div class="popup-content">
-    <span class="close" onclick="closePopup('paymentPopup')">X</span>
-    <h2>Zahlungsmethode wählen</h2>
-    <button onclick="pay('cash')">Bar</button>
-    <button onclick="pay('card')">Karte</button>
-    <button id="useBalanceBtn" style="display:none;" onclick="pay('balance')">Punkte verwenden (€<span id="cardBalance">0,00</span>)</button>
-  </div>
-</div>
+                <div class="loyalty-section">
+                    <h4 style="margin-bottom: 8px; color: #ffcc00; font-size: 0.9rem;">💳 Kundenkarte</h4>
+                    <input type="text" class="loyalty-input" id="loyaltyInput" placeholder="Kartennummer scannen/eingeben">
+                    <button class="loyalty-btn" id="loyaltyBtn">Karte aktivieren</button>
+                    <div class="loyalty-balance hidden" id="loyaltyBalance"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!-- Loyalty card popup -->
-<div id="loyaltyPopup" class="popup">
-  <div class="popup-content">
-    <span class="close" onclick="closePopup('loyaltyPopup')">X</span>
-    <h2>Kartennummer eingeben</h2>
-    <input type="text" id="cardInput" placeholder="Kartennummer" style="padding:8px; font-size:1em; border-radius:5px; border:1px solid #ccc; width:80%;"><br><br>
-    <button onclick="loginCard()">Bestätigen</button>
-  </div>
-</div>
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; color: #d32f2f;">Zahlungsart wählen</h2>
+            <div class="payment-options">
+                <div class="payment-btn" data-method="cash">💵 Bargeld</div>
+                <div class="payment-btn" data-method="card">💳 Debit Card</div>
+                <div class="payment-btn" data-method="credit">💳 Kreditkarte</div>
+                <div class="payment-btn" data-method="loyalty">🎁 Punkte</div>
+            </div>
+            <button onclick="closeModal()" style="margin-top: 20px; padding: 10px 20px; background: #ccc; border: none; border-radius: 5px; cursor: pointer;">Abbrechen (ESC)</button>
+        </div>
+    </div>
 
-<!-- Card insert -->
-<div id="insertStep" class="popup">
-  <div class="popup-content">
-    <h2>Bitte Karte ins Terminal einstecken</h2>
-    <button onclick="insertCard()">Eingesteckt</button>
-  </div>
-</div>
+    <!-- Cash Payment Modal -->
+    <div class="modal" id="cashModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; color: #d32f2f;">Bargeld-Zahlung</h2>
+            <p>Gesamtbetrag: <span id="cashTotal" style="font-weight: bold; color: #d32f2f;"></span></p>
+            <input type="number" class="cash-input" id="cashInput" placeholder="Erhaltener Betrag eingeben" step="0.01" min="0">
+            <div id="changeAmount" style="margin: 10px 0; font-weight: bold;"></div>
+            <button onclick="processCashPayment()" style="width: 100%; padding: 15px; background: #4caf50; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">Zahlung abschließen</button>
+            <button onclick="closeModal()" style="width: 100%; padding: 10px; background: #ccc; border: none; border-radius: 5px; margin-top: 10px;">Abbrechen</button>
+        </div>
+    </div>
 
-<!-- Loading -->
-<div id="loading" class="popup">
-  <div class="popup-content">
-    <div class="loading">Verarbeite...</div>
-  </div>
-</div>
+    <!-- Card Payment Modal -->
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; color: #d32f2f;">Kartenzahlung</h2>
+            <p>Gesamtbetrag: <span id="cardTotal" style="font-weight: bold; color: #d32f2f;"></span></p>
+            <div id="cardStatus">
+                <p>Kunde soll Karte einführen...</p>
+                <div class="loading-spinner"></div>
+            </div>
+            <button onclick="closeModal()" style="margin-top: 20px; padding: 10px 20px; background: #ccc; border: none; border-radius: 5px;">Abbrechen</button>
+        </div>
+    </div>
 
-<!-- Success -->
-<div id="successCheck" class="popup">
-  <div class="success-checkmark"></div>
-</div>
+    <!-- Loyalty Payment Modal -->
+    <div class="modal" id="loyaltyModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px; color: #d32f2f;">Punkte-Zahlung</h2>
+            <p>Gesamtbetrag: <span id="loyaltyTotal" style="font-weight: bold; color: #d32f2f;"></span></p>
+            <p>Verfügbare Punkte: <span id="availablePoints" style="font-weight: bold; color: #4caf50;"></span></p>
+            <div id="loyaltyStatus"></div>
+            <button onclick="processLoyaltyPayment()" id="loyaltyPayBtn" style="width: 100%; padding: 15px; background: #4caf50; color: white; border: none; border-radius: 5px; font-weight: bold; margin-top: 10px;">Mit Punkten bezahlen</button>
+            <button onclick="closeModal()" style="width: 100%; padding: 10px; background: #ccc; border: none; border-radius: 5px; margin-top: 10px;">Abbrechen</button>
+        </div>
+    </div>
 
-<div class="notification" id="notification"></div>
+    <script>
+        // Menu data organized by categories
+        const menuData = {
+            burgers: [
+                { id: 1, name: "Big Mac", description: "Zwei Rindfleisch-Patties, Spezialsoße, Salat, Käse, Zwiebeln, Gurken", price: 4.99 },
+                { id: 2, name: "Quarter Pounder", description: "Rindfleisch-Patty (113g), Käse, Zwiebeln, Gurken, Ketchup, Senf", price: 5.49 },
+                { id: 3, name: "Cheeseburger", description: "Rindfleisch-Patty, Käse, Zwiebeln, Gurken, Ketchup, Senf", price: 2.49 },
+                { id: 4, name: "Hamburger", description: "Rindfleisch-Patty, Zwiebeln, Gurken, Ketchup, Senf", price: 1.99 },
+                { id: 5, name: "McDouble", description: "Zwei Rindfleisch-Patties, Käse, Zwiebeln, Gurken, Ketchup, Senf", price: 3.49 },
+                { id: 6, name: "Double Cheeseburger", description: "Zwei Rindfleisch-Patties, zwei Käsescheiben, Zwiebeln, Gurken", price: 4.49 }
+            ],
+            chicken: [
+                { id: 7, name: "McChicken", description: "Knuspriges Hähnchen-Filet, Salat, Mayo", price: 3.99 },
+                { id: 8, name: "Chicken McNuggets 6er", description: "6 knusprige Hähnchen-Stücke", price: 4.49 },
+                { id: 9, name: "Chicken McNuggets 9er", description: "9 knusprige Hähnchen-Stücke", price: 5.99 },
+                { id: 10, name: "Chicken McNuggets 20er", description: "20 knusprige Hähnchen-Stücke", price: 9.99 },
+                { id: 11, name: "Crispy Chicken", description: "Knuspriges Hähnchen-Filet, Salat, Tomate, Mayo", price: 4.99 },
+                { id: 12, name: "Spicy Chicken", description: "Scharfes Hähnchen-Filet, Salat, scharfe Soße", price: 5.49 }
+            ],
+            sides: [
+                { id: 13, name: "Pommes Frites klein", description: "Goldgelbe Pommes Frites", price: 1.99 },
+                { id: 14, name: "Pommes Frites mittel", description: "Goldgelbe Pommes Frites", price: 2.49 },
+                { id: 15, name: "Pommes Frites groß", description: "Goldgelbe Pommes Frites", price: 2.99 },
+                { id: 16, name: "Zwiebelringe", description: "Knusprige Zwiebelringe", price: 2.99 },
+                { id: 17, name: "Mozzarella Sticks", description: "Panierte Mozzarella-Stäbchen", price: 3.49 },
+                { id: 18, name: "Apfelscheiben", description: "Frische Apfelscheiben", price: 1.49 }
+            ],
+            drinks: [
+                { id: 19, name: "Coca-Cola klein", description: "Erfrischende Cola 0,25l", price: 1.99 },
+                { id: 20, name: "Coca-Cola mittel", description: "Erfrischende Cola 0,4l", price: 2.49 },
+                { id: 21, name: "Coca-Cola groß", description: "Erfrischende Cola 0,5l", price: 2.99 },
+                { id: 22, name: "Fanta Orange", description: "Fruchtige Orange 0,4l", price: 2.49 },
+                { id: 23, name: "Sprite", description: "Zitronig-frisch 0,4l", price: 2.49 },
+                { id: 24, name: "Kaffee", description: "Frisch gebrühter Kaffee", price: 1.99 },
+                { id: 25, name: "Cappuccino", description: "Cremiger Cappuccino", price: 2.79 },
+                { id: 26, name: "Orangensaft", description: "100% Orangensaft 0,25l", price: 2.99 }
+            ],
+            desserts: [
+                { id: 27, name: "McFlurry Oreo", description: "Vanilleeis mit Oreo-Keksstücken", price: 3.49 },
+                { id: 28, name: "McFlurry Smarties", description: "Vanilleeis mit Smarties", price: 3.49 },
+                { id: 29, name: "Apple Pie", description: "Warmer Apfelkuchen", price: 1.99 },
+                { id: 30, name: "Cookies", description: "Frisch gebackene Cookies", price: 2.49 },
+                { id: 31, name: "Milchshake Vanille", description: "Cremiger Vanille-Milchshake", price: 3.99 },
+                { id: 32, name: "Sundae Erdbeere", description: "Vanilleeis mit Erdbeersauce", price: 2.99 }
+            ],
+            menus: [
+                { id: 33, name: "Big Mac Menü", description: "Big Mac + mittlere Pommes + mittleres Getränk", price: 8.99 },
+                { id: 34, name: "Quarter Pounder Menü", description: "Quarter Pounder + mittlere Pommes + mittleres Getränk", price: 9.49 },
+                { id: 35, name: "McChicken Menü", description: "McChicken + mittlere Pommes + mittleres Getränk", price: 7.99 },
+                { id: 36, name: "McNuggets 9er Menü", description: "9 McNuggets + mittlere Pommes + mittleres Getränk", price: 8.99 },
+                { id: 37, name: "Filet-o-Fish Menü", description: "Filet-o-Fish + mittlere Pommes + mittleres Getränk", price: 8.49 },
+                { id: 38, name: "McDouble Menü", description: "McDouble + mittlere Pommes + mittleres Getränk", price: 6.99 }
+            ]
+        };
 
-<audio id="applePaySound" src="your_sound_file_here.mp3"></audio>
+        // Application state
+        let cart = [];
+        let currentCategory = 'burgers';
+        let loyaltyCard = null;
+        let loyaltyBalance = 0;
+        let orderNumber = 1001;
 
-<script>
-let cart=[]; 
-let loyaltyCard={number:"676942041",balance:0.00,loggedIn:false};
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMenuItems();
+            setupEventListeners();
+            loadLoyaltyData();
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
 
-function openTab(tabId){ document.querySelectorAll('.tab,.tab-content').forEach(el=>el.classList.remove('active')); document.getElementById(tabId).classList.add('active'); document.querySelector(`.tab[onclick="openTab('${tabId}')"]`).classList.add('active'); }
-function addToCart(item,price){ cart.push({item,price}); renderCart(); }
-function removeFromCart(i){ cart.splice(i,1); renderCart(); }
-function renderCart(){ let html=''; let total=0; cart.forEach((c,i)=>{ html+=`<div class="cart-item">${c.item} - €${c.price.toFixed(2)} <span class="remove" onclick="removeFromCart(${i})">X</span></div>`; total+=c.price; }); document.getElementById('cartItems').innerHTML=html; document.getElementById('total').innerText=total.toFixed(2).replace('.',','); document.getElementById('cart').classList.add('show'); }
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('de-DE');
+        }
 
-function showNotification(text){ const notif=document.getElementById("notification"); notif.innerText=text; notif.classList.add("show"); setTimeout(()=>{ notif.classList.remove("show"); },6000); }
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    renderMenuItems();
+                });
+            });
 
-document.getElementById('loyaltyBtn').addEventListener('click',()=>{ document.getElementById('loyaltyPopup').classList.add('show'); });
-function loginCard(){ const input=document.getElementById('cardInput').value.trim(); if(input===loyaltyCard.number){ loyaltyCard.loggedIn=true; showNotification("Karte eingeloggt! Balance: €"+loyaltyCard.balance.toFixed(2).replace('.',',')); closePopup('loyaltyPopup'); } else { showNotification("Ungültige Kartennummer!"); } }
+            // Checkout button
+            document.getElementById('checkoutBtn').addEventListener('click', openPaymentModal);
 
-function showPayment(){
-  if(cart.length===0) return showNotification("Ihr Warenkorb ist leer!");
-  const cardBtn=document.querySelector('#paymentPopup button[onclick="pay(\'card\')"]');
-  const useBtn=document.getElementById('useBalanceBtn');
-  const totalPrice=cart.reduce((sum,c)=>sum+c.price,0);
+            // Clear cart button
+            document.getElementById('clearBtn').addEventListener('click', clearCart);
 
-  cardBtn.style.display='inline-block';
-  if(loyaltyCard.loggedIn){ useBtn.style.display='inline-block'; document.getElementById('cardBalance').innerText=loyaltyCard.balance.toFixed(2).replace('.',','); useBtn.disabled=loyaltyCard.balance<totalPrice; } else useBtn.style.display='none';
-  document.getElementById("paymentPopup").classList.add("show");
-}
+            // Loyalty card
+            document.getElementById('loyaltyBtn').addEventListener('click', activateLoyaltyCard);
 
-function closePopup(id){ document.getElementById(id).classList.remove("show"); }
+            // Payment methods
+            document.querySelectorAll('.payment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const method = this.dataset.method;
+                    closeModal();
+                    setTimeout(() => openPaymentMethod(method), 300);
+                });
+            });
 
-function pay(method){
-  closePopup('paymentPopup');
-  if(method==='cash') startOrder('Bar');
-  else if(method==='card') document.getElementById("insertStep").classList.add("show");
-  else if(method==='balance') startOrder('Balance');
-}
+            // Cash input change
+            document.getElementById('cashInput').addEventListener('input', calculateChange);
 
-function insertCard(){
-  document.getElementById("insertStep").classList.remove("show");
-  document.getElementById("loading").classList.add("show");
-  setTimeout(()=>{
-    document.getElementById("loading").classList.remove("show");
-    let check=document.getElementById("successCheck");
-    check.classList.add("show");
-    check.querySelector(".success-checkmark").classList.add("show");
-    document.getElementById("applePaySound").play();
-    launchConfetti();
-    setTimeout(()=>{
-      check.querySelector(".success-checkmark").classList.remove("show");
-      check.classList.remove("show");
-      startOrder("Karte");
-    },2000);
-  },2500);
-}
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'F1') {
+                    e.preventDefault();
+                    if (cart.length > 0) openPaymentModal();
+                }
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
 
-function generateOrderNumber(){ let number; do{ number=Math.floor(1000+Math.random()*9000); } while(Math.random()<0.6 && !String(number).includes("67")); return number; }
+        function renderMenuItems() {
+            const container = document.getElementById('menuItems');
+            const items = menuData[currentCategory];
+            
+            container.innerHTML = items.map(item => `
+                <div class="menu-item" onclick="addToCart(${item.id})">
+                    <h3>${item.name}</h3>
+                    <p>${item.description}</p>
+                    <div class="item-footer">
+                        <span class="price">${item.price.toFixed(2)} €</span>
+                        <button class="add-btn" onclick="event.stopPropagation(); addToCart(${item.id})">Hinzufügen</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-function startOrder(method){
-  const orderNumber=generateOrderNumber();
-  let totalPrice = cart.reduce((sum,c)=>sum+c.price,0);
+        function addToCart(itemId) {
+            const allItems = Object.values(menuData).flat();
+            const item = allItems.find(i => i.id === itemId);
+            
+            if (item) {
+                cart.push({...item, cartId: Date.now() + Math.random()});
+                renderCart();
+                showNotification('Artikel hinzugefügt', 'success');
+                playSound('add');
+            }
+        }
 
-  if(method==='Balance' && loyaltyCard.loggedIn && loyaltyCard.balance>0){
-    const deduction=Math.min(loyaltyCard.balance,totalPrice);
-    totalPrice-=deduction;
-    loyaltyCard.balance-=deduction;
-    loyaltyCard.balance=parseFloat(loyaltyCard.balance.toFixed(2));
-  }
+        function removeFromCart(cartId) {
+            cart = cart.filter(item => item.cartId !== cartId);
+            renderCart();
+            showNotification('Artikel entfernt', 'info');
+        }
 
-  cart.forEach(c=>{
-    if(c.item.toLowerCase().includes("mac")||c.item.toLowerCase().includes("chicken")||c.item.toLowerCase().includes("burger")) loyaltyCard.balance+=0.15;
-    else loyaltyCard.balance+=0.05;
-  });
-  loyaltyCard.balance=parseFloat(loyaltyCard.balance.toFixed(2));
-  document.getElementById('cardBalance').innerText=loyaltyCard.balance.toFixed(2).replace('.',',');
+        function clearCart() {
+            if (cart.length === 0) return;
+            
+            if (confirm('Möchten Sie die gesamte Bestellung löschen?')) {
+                cart = [];
+                renderCart();
+                showNotification('Bestellung gelöscht', 'info');
+            }
+        }
 
-  showNotification("Bestellung aufgegeben! Nr: "+orderNumber+" ("+method+")\nEndpreis: €"+totalPrice.toFixed(2).replace('.',','));
-  cart=[]; renderCart();
+        function renderCart() {
+            const container = document.getElementById('cartItems');
+            const checkoutBtn = document.getElementById('checkoutBtn');
+            
+            if (cart.length === 0) {
+                container.innerHTML = '<div class="empty-cart">Keine Artikel ausgewählt</div>';
+                checkoutBtn.disabled = true;
+            } else {
+                container.innerHTML = cart.map(item => `
+                    <div class="cart-item">
+                        <div class="cart-item-info">
+                            <h4>${item.name}</h4>
+                            <div class="cart-item-price">${item.price.toFixed(2)} €</div>
+                        </div>
+                        <button class="remove-btn" onclick="removeFromCart('${item.cartId}')">×</button>
+                    </div>
+                `).join('');
+                checkoutBtn.disabled = false;
+            }
+            
+            updateTotal();
+        }
 
-  const readyTime=(60+Math.random()*30)*1000;
-  setTimeout(()=>{ showNotification("Bestellung "+orderNumber+" ist abholbereit!"); },readyTime);
-}
+        function updateTotal() {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            document.getElementById('totalAmount').textContent = total.toFixed(2) + ' €';
+        }
 
-function launchConfetti(){
-  for(let i=0;i<50;i++){
-    const c=document.createElement("div");
-    c.className="confetti";
-    c.style.left=Math.random()*window.innerWidth+"px";
-    c.style.background=["#FFC72C","#FF3C00","#00BFFF","#32CD32"][Math.floor(Math.random()*4)];
-    document.body.appendChild(c);
-    let fall=0;
-    c.style.opacity=1;
-    const interval=setInterval(()=>{
-      fall+=Math.random()*8+2;
-      c.style.top=fall+"px";
-      c.style.transform=`rotate(${fall*10}deg)`;
-      if(fall>window.innerHeight){ clearInterval(interval); c.remove(); }
-    },16);
-  }
-}
-</script>
-</body>
+        function activateLoyaltyCard() {
+            const cardNumber = document.getElementById('loyaltyInput').value.trim();
+            
+            if (!cardNumber) {
+                showNotification('Bitte Kartennummer eingeben', 'error');
+                return;
+            }
+            
+            if (cardNumber.length < 8) {
+                showNotification('Ungültige Kartennummer', 'error');
+                return;
+            }
+            
+            loyaltyCard = cardNumber;
+            loyaltyBalance = Math.floor(Math.random() * 500) + 100;
+            
+            document.getElementById('loyaltyBalance').innerHTML = `
+                Guthaben: ${loyaltyBalance} Punkte<br>
+                <small>(1 Punkt = 0,01 €)</small>
+            `;
+            document.getElementById('loyaltyBalance').classList.remove('hidden');
+            
+            showNotification('Kundenkarte aktiviert', 'success');
+            saveLoyaltyData();
+        }
+
+        function openPaymentModal() {
+            if (cart.length === 0) return;
+            document.getElementById('paymentModal').style.display = 'block';
+        }
+
+        function openPaymentMethod(method) {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            switch(method) {
+                case 'cash':
+                    document.getElementById('cashTotal').textContent = total.toFixed(2) + ' €';
+                    document.getElementById('cashInput').value = '';
+                    document.getElementById('changeAmount').textContent = '';
+                    document.getElementById('cashModal').style.display = 'block';
+                    setTimeout(() => document.getElementById('cashInput').focus(), 100);
+                    break;
+                    
+                case 'card':
+                case 'credit':
+                    document.getElementById('cardTotal').textContent = total.toFixed(2) + ' €';
+                    document.getElementById('cardModal').style.display = 'block';
+                    simulateCardPayment();
+                    break;
+                    
+                case 'loyalty':
+                    if (!loyaltyCard) {
+                        showNotification('Bitte zuerst Kundenkarte aktivieren', 'error');
+                        return;
+                    }
+                    document.getElementById('loyaltyTotal').textContent = total.toFixed(2) + ' €';
+                    document.getElementById('availablePoints').textContent = loyaltyBalance + ' Punkte';
+                    
+                    const requiredPoints = Math.ceil(total * 100);
+                    const statusDiv = document.getElementById('loyaltyStatus');
+                    const payBtn = document.getElementById('loyaltyPayBtn');
+                    
+                    if (loyaltyBalance >= requiredPoints) {
+                        statusDiv.innerHTML = `<p style="color: #4caf50;">✓ Ausreichend Punkte vorhanden<br>Benötigt: ${requiredPoints} Punkte</p>`;
+                        payBtn.disabled = false;
+                    } else {
+                        statusDiv.innerHTML = `<p style="color: #f44336;">✗ Nicht genügend Punkte<br>Benötigt: ${requiredPoints} Punkte<br>Fehlend: ${requiredPoints - loyaltyBalance} Punkte</p>`;
+                        payBtn.disabled = true;
+                    }
+                    
+                    document.getElementById('loyaltyModal').style.display = 'block';
+                    break;
+            }
+        }
+
+        function calculateChange() {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const given = parseFloat(document.getElementById('cashInput').value) || 0;
+            const change = given - total;
+            const changeDiv = document.getElementById('changeAmount');
+            
+            if (given === 0) {
+                changeDiv.textContent = '';
+            } else if (change < 0) {
+                changeDiv.innerHTML = `<span style="color: #f44336;">Noch ${Math.abs(change).toFixed(2)} € fehlen</span>`;
+            } else if (change === 0) {
+                changeDiv.innerHTML = `<span style="color: #4caf50;">✓ Passend bezahlt</span>`;
+            } else {
+                changeDiv.innerHTML = `<span style="color: #4caf50;">Rückgeld: ${change.toFixed(2)} €</span>`;
+            }
+        }
+
+        function processCashPayment() {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const given = parseFloat(document.getElementById('cashInput').value) || 0;
+            
+            if (given < total) {
+                showNotification('Nicht genügend Bargeld erhalten', 'error');
+                return;
+            }
+            
+            const change = given - total;
+            closeModal();
+            
+            setTimeout(() => {
+                showSuccessAnimation();
+                showNotification(`Bargeld-Zahlung erfolgreich! ${change > 0 ? `Rückgeld: ${change.toFixed(2)} €` : ''}`, 'success');
+                completeOrder();
+            }, 500);
+        }
+
+        function simulateCardPayment() {
+            const statusDiv = document.getElementById('cardStatus');
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '<p>Karte wird gelesen...</p><div class="loading-spinner"></div>';
+                playSound('card');
+            }, 1000);
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '<p>PIN-Eingabe durch Kunden...</p><div class="loading-spinner"></div>';
+            }, 2500);
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = '<p>Zahlung wird verarbeitet...</p><div class="loading-spinner"></div>';
+            }, 4000);
+            
+            setTimeout(() => {
+                closeModal();
+                showSuccessAnimation();
+                showNotification('Kartenzahlung erfolgreich!', 'success');
+                completeOrder();
+            }, 5500);
+        }
+
+        function processLoyaltyPayment() {
+            const total = cart.reduce((sum, item) => sum + item.price, 0);
+            const requiredPoints = Math.ceil(total * 100);
+            
+            if (loyaltyBalance < requiredPoints) {
+                showNotification('Nicht genügend Punkte', 'error');
+                return;
+            }
+            
+            loyaltyBalance -= requiredPoints;
+            document.getElementById('loyaltyBalance').innerHTML = `
+                Guthaben: ${loyaltyBalance} Punkte<br>
+                <small>(1 Punkt = 0,01 €)</small>
+            `;
+            
+            closeModal();
+            showSuccessAnimation();
+            showNotification('Punkte-Zahlung erfolgreich!', 'success');
+            completeOrder();
+            saveLoyaltyData();
+        }
+
+        function completeOrder() {
+            // Add loyalty points for purchase
+            if (loyaltyCard) {
+                const total = cart.reduce((sum, item) => sum + item.price, 0);
+                const earnedPoints = Math.floor(total * 10);
+                loyaltyBalance += earnedPoints;
+                
+                document.getElementById('loyaltyBalance').innerHTML = `
+                    Guthaben: ${loyaltyBalance} Punkte<br>
+                    <small>(1 Punkt = 0,01 €)</small>
+                `;
+                
+                setTimeout(() => {
+                    showNotification(`+${earnedPoints} Punkte gutgeschrieben`, 'success');
+                }, 2000);
+                
+                saveLoyaltyData();
+            }
+            
+            // Clear cart and increment order number
+            cart = [];
+            renderCart();
+            orderNumber++;
+            document.getElementById('orderNumber').textContent = orderNumber;
+            
+            setTimeout(() => {
+                showNotification('Bestellung wird zubereitet...', 'info');
+            }, 3000);
+            
+            setTimeout(() => {
+                showNotification('Bestellung bereit zur Abholung!', 'success');
+                playSound('ready');
+            }, 8000);
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        function showSuccessAnimation() {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="success-animation">✓</div>
+                    <h2 style="color: #4caf50; margin-top: 20px;">Zahlung erfolgreich!</h2>
+                    <p>Bestellung #${orderNumber} abgeschlossen</p>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            setTimeout(() => {
+                modal.remove();
+            }, 2000);
+        }
+
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const sounds = {
+                add: { frequency: 800, duration: 0.1 },
+                card: { frequency: 400, duration: 0.3 },
+                ready: { frequency: 600, duration: 0.5 }
+            };
+            
+            const sound = sounds[type];
+            if (!sound) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(sound.frequency, audioContext.currentTime);
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + sound.duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + sound.duration);
+        }
+
+        function saveLoyaltyData() {
+            if (loyaltyCard) {
+                localStorage.setItem('mcdonalds_loyalty_card', loyaltyCard);
+                localStorage.setItem('mcdonalds_loyalty_balance', loyaltyBalance.toString());
+            }
+        }
+
+        function loadLoyaltyData() {
+            const savedCard = localStorage.getItem('mcdonalds_loyalty_card');
+            const savedBalance = localStorage.getItem('mcdonalds_loyalty_balance');
+            
+            if (savedCard && savedBalance) {
+                loyaltyCard = savedCard;
+                loyaltyBalance = parseInt(savedBalance);
+                
+                document.getElementById('loyaltyInput').value = loyaltyCard;
+                document.getElementById('loyaltyBalance').innerHTML = `
+                    Guthaben: ${loyaltyBalance} Punkte<br>
+                    <small>(1 Punkt = 0,01 €)</small>
+                `;
+                document.getElementById('loyaltyBalance').classList.remove('hidden');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal();
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'981c3568e18925c0',t:'MTc1ODMxNzY4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
